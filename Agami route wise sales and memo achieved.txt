@@ -1,0 +1,49 @@
+SELECT  
+        vta.wing_id,
+        vta.wing_name,
+        vta.division_id,
+        vta.division_name,
+        vta.teritory_id,
+        vta.teritory_name,
+        vta.zone_id,
+        vta.zone_name,
+        vta.route_id,
+        vta.route_name,
+        srt.visit_frequency,
+        count(ac.consumer_id) nosofOutlet,
+        max(amis.per_memo_sales_target) perMemoTarget,
+        max(amis.memo_target) * count(ac.consumer_id) nosofMemoTarget,
+        NVL(sum(sale.totalSales),0) totalSales,
+        sum(amis.total_memo_count) totalAchMemo,
+        sum(amis.ach_memo_sales) onlyAchMemo
+FROM    (SELECT * FROM v_teritory_all 
+        WHERE teritory_id IN (SELECT DISTINCT TERRITORY_ID FROM agami_territory)
+        and   (:wingId is null or wing_id = :wingId)
+        and   (:divisionId is null or division_id = :divisionId )
+        and   (:teritoryId is null or teritory_id = :teritoryId )
+        and   (:zoneId is null or zone_id = :zoneId )
+        and   (:routeId is null or route_id = :routeId )
+        ) vta
+JOIN    sales_rep_teritory srt  ON vta.route_id = srt.teritory_id
+JOIN    consumer_teritory ct ON srt.teritory_id = ct.teritory_id
+JOIN    consumer c ON ct.consumer_id = c.id
+JOIN    agami_consumer ac ON c.id = ac.consumer_id
+JOIN    agami_monthly_invoice_summary amis ON ac.id = amis.agami_consumer_id
+AND     amis.product_id=7
+AND     amis.target_month = :targetMonth --input format JANUARY-2025
+AND     ac.is_active = 1
+LEFT    JOIN (
+                    SELECT  ac.consumer_id,
+                    SUM(ii.quantity) totalSales
+            FROM    agami_consumer ac
+            JOIN    invoice_main partition(JAN_25) im ON ac.consumer_id = im.consumer_id
+            AND     ac.is_active = 1
+            JOIN    invoice_items partition(JAN_25) ii ON IM.inv_no = ii.inv_no
+            AND     ii.quantity > 0
+            AND     im.inv_type = 'I'
+		AND     ii.product_id=7
+            GROUP   BY ac.consumer_id) sale
+            ON ac.consumer_id = sale.consumer_id
+GROUP   BY vta.wing_id,vta.wing_name,vta.division_id,vta.division_name,vta.teritory_id,vta.teritory_name,vta.zone_id,
+        vta.zone_name,vta.route_id,vta.route_name,srt.visit_frequency
+ORDER   BY vta.wing_id,vta.division_id,vta.teritory_id,vta.zone_id,vta.route_id 
