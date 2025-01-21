@@ -1,0 +1,106 @@
+-- OUTLET WISE AGAMI--
+SELECT 
+        wing_id wingId,
+        wing_name wingName,
+        division_id divisionId,
+        division_name divisionName,
+        teritory_id teritoryId,
+        teritory_name teritoryName,
+        zone_id zoneId,
+        zone_name zoneName,
+        route_id routeId,
+        route_name routeName,
+        consumer_code consumerCode,
+        customer_name consumerName,
+        trade_license_name outletName,
+        mobile_no mobileNo,
+        visit_frequency frequency,
+        perMemoTarget,
+        nosofMemoTarget,
+        NVL(s01,0) s01, NVL(s02,0) s02, NVL(s03,0) s03, NVL(s04,0) s04, NVL(s05,0) s05, NVL(s06,0) s06, NVL(s07,0) s07, NVL(s08,0) s08, NVL(s09,0) s09, NVL(s10,0) s10, NVL(s11,0) s11, NVL(s12,0) s12, NVL(s13,0) s13, NVL(s14,0) s14, NVL(s15,0) s15, NVL(s16,0) s16, NVL(s17,0) s17, NVL(s18,0) s18, NVL(s19,0) s19, NVL(s20,0) s20, NVL(s21,0) s21, NVL(s22,0) s22, NVL(s23,0) s23, NVL(s24,0) s24, NVL(s25,0) s25, NVL(s26,0) s26, NVL(s27,0) s27, NVL(s28,0) s28, NVL(s29,0) s29, NVL(s30,0) s30, NVL(s31,0) s31,
+        NVL(totalSales,0) totalSalesStd,
+        totalAchMemo totalAchMemoStd,
+        onlyAchMemo onlyAchMemoStd
+FROM (SELECT  
+        vta.wing_id,
+        vta.wing_name,
+        vta.division_id,
+        vta.division_name,
+        vta.teritory_id,
+        vta.teritory_name,
+        vta.zone_id,
+        vta.zone_name,
+        vta.route_id,
+        vta.route_name,
+        srt.visit_frequency,
+        c.id,
+        c.consumer_code,
+        c.customer_name,
+        c.trade_license_name,
+        NVL(c.mobile_no,'N/A') mobile_no,
+        amis.per_memo_sales_target perMemoTarget,
+        amis.memo_target nosofMemoTarget,
+        amis.total_memo_count totalAchMemo,
+        amis.ach_memo_sales onlyAchMemo
+FROM    (SELECT * FROM v_teritory_all 
+        WHERE teritory_id IN (SELECT DISTINCT TERRITORY_ID FROM agami_territory)
+        and    wing_id = :wingId
+        and   (:divisionId is null or division_id = :divisionId )
+        and   (:teritoryId is null or teritory_id = :teritoryId )
+        and   (:zoneId is null or zone_id = :zoneId )
+        and   (:routeId is null or route_id = :routeId )
+        ) vta
+JOIN    sales_rep_teritory srt  ON vta.route_id = srt.teritory_id
+JOIN    consumer_teritory ct ON srt.teritory_id = ct.teritory_id
+JOIN    consumer c ON ct.consumer_id = c.id
+JOIN    agami_consumer ac ON c.id = ac.consumer_id
+JOIN    agami_monthly_invoice_summary amis ON ac.id = amis.agami_consumer_id
+AND     amis.product_id=7
+AND     amis.target_month = :targetMonth --input format JANUARY-2025
+AND     ac.is_active = 1
+) agami
+
+LEFT    JOIN (
+        SELECT  ac.consumer_id,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '01' THEN ii.quantity ELSE 0 END) AS s01,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '02' THEN ii.quantity ELSE 0 END) AS s02,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '03' THEN ii.quantity ELSE 0 END) AS s03,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '04' THEN ii.quantity ELSE 0 END) AS s04,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '05' THEN ii.quantity ELSE 0 END) AS s05,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '06' THEN ii.quantity ELSE 0 END) AS s06,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '07' THEN ii.quantity ELSE 0 END) AS s07,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '08' THEN ii.quantity ELSE 0 END) AS s08,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '09' THEN ii.quantity ELSE 0 END) AS s09,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '10' THEN ii.quantity ELSE 0 END) AS s10,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '11' THEN ii.quantity ELSE 0 END) AS s11,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '12' THEN ii.quantity ELSE 0 END) AS s12,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '13' THEN ii.quantity ELSE 0 END) AS s13,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '14' THEN ii.quantity ELSE 0 END) AS s14,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '15' THEN ii.quantity ELSE 0 END) AS s15,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '16' THEN ii.quantity ELSE 0 END) AS s16,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '17' THEN ii.quantity ELSE 0 END) AS s17,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '18' THEN ii.quantity ELSE 0 END) AS s18,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '19' THEN ii.quantity ELSE 0 END) AS s19,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '20' THEN ii.quantity ELSE 0 END) AS s20,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '21' THEN ii.quantity ELSE 0 END) AS s21,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '22' THEN ii.quantity ELSE 0 END) AS s22,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '23' THEN ii.quantity ELSE 0 END) AS s23,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '24' THEN ii.quantity ELSE 0 END) AS s24,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '25' THEN ii.quantity ELSE 0 END) AS s25,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '26' THEN ii.quantity ELSE 0 END) AS s26,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '27' THEN ii.quantity ELSE 0 END) AS s27,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '28' THEN ii.quantity ELSE 0 END) AS s28,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '29' THEN ii.quantity ELSE 0 END) AS s29,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '30' THEN ii.quantity ELSE 0 END) AS s30,
+        SUM(CASE WHEN TO_CHAR(im.txn_dt, 'DD')  = '31' THEN ii.quantity ELSE 0 END) AS s31,
+        SUM(ii.quantity) totalSales
+FROM    agami_consumer ac
+JOIN    invoice_main partition(JAN_25) im ON ac.consumer_id = im.consumer_id
+AND     ac.is_active = 1
+JOIN    invoice_items partition(JAN_25) ii ON IM.inv_no = ii.inv_no
+AND     ii.quantity > 0
+AND     im.inv_type = 'I'
+AND     ii.product_id=7
+GROUP   BY ac.consumer_id
+)sales ON agami.id = sales.consumer_id
+ORDER  BY wing_id ,division_id ,teritory_id ,zone_id ,route_id ,consumer_code
